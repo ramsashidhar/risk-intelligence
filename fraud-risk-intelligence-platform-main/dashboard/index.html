@@ -1,0 +1,282 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fraud Risk Intelligence Platform</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.plot.ly/plotly-2.32.0.min.js" charset="utf-8"></script>
+<style>
+  :root{
+    --card:#FFFFFF; --navy:#22344A; --navy-d:#172636; --ink:#1F2D3D;
+    --accent:#E8853A; --accent-d:#D9722A; --muted:#7C8A99; --muted-l:#9AA7B5;
+    --fraud:#D64545; --legit:#1F9D63; --line:#E6EBF2; --line-s:#EEF2F6;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    font-family:'Inter',-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    color:var(--ink); height:100vh; overflow:hidden;
+    background:
+      radial-gradient(1200px 480px at 12% -8%, rgba(232,133,58,.06), transparent 60%),
+      radial-gradient(1000px 520px at 100% 0%, rgba(34,52,74,.07), transparent 55%),
+      linear-gradient(180deg,#EEF2F7 0%,#E6EBF2 100%);
+    display:grid; grid-template-rows:54px 96px 50px 1.3fr 1fr; gap:13px; padding:16px 20px;
+    -webkit-font-smoothing:antialiased;
+  }
+  header{display:flex;align-items:center;justify-content:space-between}
+  .brand h1{font-size:22px;font-weight:800;color:var(--navy);letter-spacing:-.3px;line-height:1.05}
+  .brand h1 span{color:var(--accent)}
+  .brand p{font-size:12px;color:var(--muted);font-weight:500;margin-top:3px}
+  .meta{display:flex;gap:8px}
+  .chip{font-size:11px;color:var(--ink);font-weight:600;background:#fff;border:1px solid var(--line);
+    border-radius:20px;padding:6px 12px;box-shadow:0 1px 2px rgba(31,45,61,.05)}
+  .chip b{color:var(--accent)}
+  .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:13px}
+  .kpi{position:relative;background:var(--card);border:1px solid var(--line);border-radius:14px;
+    padding:14px 16px 13px;display:flex;flex-direction:column;justify-content:center;overflow:hidden;
+    box-shadow:0 4px 14px rgba(31,45,61,.06)}
+  .kpi::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--navy)}
+  .kpi.accent::before{background:var(--accent)}
+  .kpi .lab{font-size:10.5px;text-transform:uppercase;letter-spacing:.7px;color:var(--muted);font-weight:700}
+  .kpi .val{font-size:29px;font-weight:800;color:var(--navy);line-height:1.05;margin-top:3px;
+    font-variant-numeric:tabular-nums;letter-spacing:-.5px}
+  .kpi.accent .val{color:var(--accent)}
+  .kpi .sub{font-size:11.5px;color:var(--muted);margin-top:3px;font-weight:500}
+  .kpi .sub b{color:var(--ink);font-weight:700}
+  .controls{background:var(--card);border:1px solid var(--line);border-radius:14px;
+    display:flex;align-items:center;gap:18px;padding:0 18px;box-shadow:0 4px 14px rgba(31,45,61,.06)}
+  .controls .lbl{font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.5px}
+  .seg{display:inline-flex;background:#F1F4F8;border-radius:9px;padding:3px}
+  .seg button{border:0;background:transparent;color:var(--muted);font-size:12.5px;font-weight:600;
+    font-family:inherit;padding:6px 15px;cursor:pointer;border-radius:7px;transition:all .15s}
+  .seg button.on{background:var(--navy);color:#fff;box-shadow:0 1px 3px rgba(23,38,54,.25)}
+  .controls input[type=range]{flex:1;accent-color:var(--accent);height:5px}
+  .readout{font-size:13px;color:var(--ink);font-weight:600;white-space:nowrap;
+    background:#F1F4F8;border-radius:8px;padding:6px 12px}
+  .readout b{color:var(--accent);font-weight:800}
+  .mid{display:grid;grid-template-columns:1.55fr 1fr;gap:13px;min-height:0}
+  .bottom{display:grid;grid-template-columns:repeat(4,1fr);gap:13px;min-height:0}
+  .tile{background:var(--card);border:1px solid var(--line);border-radius:14px;
+    padding:12px 14px;display:flex;flex-direction:column;min-height:0;
+    box-shadow:0 4px 14px rgba(31,45,61,.06)}
+  .tile h3{font-size:12.5px;font-weight:700;color:var(--navy);margin-bottom:8px;
+    display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+  .tile h3 .dot{width:7px;height:7px;border-radius:50%;background:var(--accent);display:inline-block;
+    margin-right:7px;vertical-align:middle}
+  .tile h3 small{font-size:10.5px;color:var(--muted-l);font-weight:500;letter-spacing:.3px}
+  .plot{flex:1;min-height:0}
+  .tbl-wrap{flex:1;overflow:auto;min-height:0;margin:0 -2px}
+  table{width:100%;border-collapse:collapse;font-size:11.5px}
+  th{position:sticky;top:0;background:#fff;text-align:left;color:var(--muted);
+    font-weight:700;padding:6px 7px;border-bottom:1.5px solid var(--line);font-size:10px;
+    text-transform:uppercase;letter-spacing:.5px;z-index:1}
+  td{padding:6px 7px;border-bottom:1px solid var(--line-s);white-space:nowrap}
+  tr:hover td{background:#FAFBFD}
+  td.num{text-align:right;font-variant-numeric:tabular-nums}
+  .pill{display:inline-block;padding:2px 9px;border-radius:20px;font-size:9.5px;font-weight:800;letter-spacing:.4px}
+  .pill.f{background:#FBE9E9;color:var(--fraud)}
+  .pill.l{background:#EAF6EF;color:var(--legit)}
+  .pbar{display:inline-block;height:6px;border-radius:3px;background:var(--accent);vertical-align:middle;
+    margin-right:5px;min-width:4px}
+  .card-mono{font-variant-numeric:tabular-nums;color:var(--muted)}
+  ::-webkit-scrollbar{width:9px;height:9px}
+  ::-webkit-scrollbar-thumb{background:#CdD5DF;border-radius:5px;border:2px solid #fff}
+  ::-webkit-scrollbar-track{background:transparent}
+</style>
+</head>
+<body>
+  <header>
+    <div class="brand">
+      <h1>Fraud&nbsp;Risk <span>Intelligence&nbsp;Platform</span></h1>
+      <p>Real-time risk scoring over a 198,982-transaction hold-out, ranked into an analyst review queue.</p>
+    </div>
+    <div class="meta">
+      <span class="chip">XGBoost · PR-AUC <b>0.883</b></span>
+      <span class="chip">PostgreSQL + Python</span>
+      <span class="chip">Sparkov</span>
+    </div>
+  </header>
+
+  <section class="kpis">
+    <div class="kpi"><div class="lab">Fraud in test set</div><div class="val" id="k-fraud">–</div><div class="sub" id="k-fraud-sub">exposure</div></div>
+    <div class="kpi"><div class="lab">Alerts reviewed</div><div class="val" id="k-rev">–</div><div class="sub" id="k-rev-sub">of gated queue</div></div>
+    <div class="kpi"><div class="lab">Fraud caught</div><div class="val" id="k-caught">–</div><div class="sub" id="k-caught-sub">recall</div></div>
+    <div class="kpi accent"><div class="lab">Alert precision</div><div class="val" id="k-prec">–</div><div class="sub" id="k-prec-sub">loss recovered</div></div>
+  </section>
+
+  <section class="controls">
+    <span class="lbl">Rank by</span>
+    <div class="seg" id="seg">
+      <button data-k="p" class="on">Fraud probability</button>
+      <button data-k="el">Expected loss</button>
+    </div>
+    <span class="lbl">Review budget</span>
+    <input type="range" id="budget" min="50" step="10">
+    <span class="readout" id="readout">–</span>
+  </section>
+
+  <section class="mid">
+    <div class="tile">
+      <h3><span><span class="dot"></span>Alert budget curve</span> <small id="curve-sub">recall &amp; precision vs queue depth</small></h3>
+      <div class="plot" id="curve"></div>
+    </div>
+    <div class="tile">
+      <h3><span><span class="dot"></span>Alert queue</span> <small id="tbl-sub"></small></h3>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>Time</th><th>Card</th><th>Category</th><th class="num">Amount</th><th>Prob</th><th class="num">Exp. loss</th><th>Outcome</th></tr></thead>
+          <tbody id="tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section class="bottom">
+    <div class="tile"><h3><span><span class="dot"></span>Fraud rate by category</span> <small>%</small></h3><div class="plot" id="cat"></div></div>
+    <div class="tile"><h3><span><span class="dot"></span>Fraud volume by week</span></h3><div class="plot" id="wk"></div></div>
+    <div class="tile"><h3><span><span class="dot"></span>Amount: fraud vs legit</span> <small>log $</small></h3><div class="plot" id="amt"></div></div>
+    <div class="tile"><h3><span><span class="dot"></span>Model vs rules</span> <small>PR</small></h3><div class="plot" id="pr"></div></div>
+  </section>
+
+<script src="data.js"></script>
+<script>
+const D = window.DASH;
+const C = {navy:'#22344A',ink:'#1F2D3D',accent:'#E8853A',muted:'#7C8A99',
+           fraud:'#D64545',legit:'#1F9D63',line:'#E6EBF2'};
+const PCFG = {responsive:true, displayModeBar:false};
+const BASE = {paper_bgcolor:'rgba(0,0,0,0)', plot_bgcolor:'rgba(0,0,0,0)',
+  font:{family:'Inter,-apple-system,Segoe UI,sans-serif', size:10, color:C.ink},
+  margin:{l:34,r:8,t:6,b:24}};
+const money = n => '$' + Math.round(n).toLocaleString();
+const TOTAL = D.alerts.length;
+
+let rankBy = 'p';
+let budget = Math.min(1000, TOTAL);
+let R = [], caughtCum = [], lossCum = [];
+
+function rebuild(){
+  R = [...D.alerts].sort((a,b)=> b[rankBy]-a[rankBy]);
+  caughtCum = []; lossCum = [];
+  let c=0,l=0;
+  for(let i=0;i<R.length;i++){ if(R[i].f===1){c++; l+=R[i].amt;} caughtCum.push(c); lossCum.push(l); }
+  drawCurve();
+  drawTable();
+  refresh();
+}
+
+function refresh(){
+  const i = Math.min(budget, TOTAL) - 1;
+  const caught = caughtCum[i]||0, loss = lossCum[i]||0;
+  const recall = 100*caught/D.totalFraud;
+  const prec = 100*caught/budget;
+  document.getElementById('k-fraud').textContent   = D.totalFraud.toLocaleString();
+  document.getElementById('k-fraud-sub').innerHTML = '<b>'+money(D.totalFraudLoss)+'</b> exposure';
+  document.getElementById('k-rev').textContent     = budget.toLocaleString();
+  document.getElementById('k-rev-sub').innerHTML   = 'of <b>'+TOTAL.toLocaleString()+'</b> gated';
+  document.getElementById('k-caught').textContent  = caught.toLocaleString();
+  document.getElementById('k-caught-sub').innerHTML= '<b>'+recall.toFixed(1)+'%</b> recall';
+  document.getElementById('k-prec').textContent    = prec.toFixed(1)+'%';
+  document.getElementById('k-prec-sub').innerHTML  = '<b>'+money(loss)+'</b> recovered';
+  document.getElementById('readout').innerHTML = 'Reviewing <b>'+budget.toLocaleString()+'</b> / '+TOTAL.toLocaleString();
+  Plotly.relayout('curve', {'shapes[0].x1':budget,'shapes[1].x0':budget,'shapes[1].x1':budget});
+  if(budget < 280) drawTable();
+}
+
+function drawCurve(){
+  const xs = R.map((_,i)=>i+1);
+  const recallY = caughtCum.map(c=>100*c/D.totalFraud);
+  const precY   = caughtCum.map((c,i)=>100*c/(i+1));
+  const data = [
+    {x:xs,y:recallY,name:'Fraud recall',mode:'lines',line:{color:C.accent,width:2.6},
+      fill:'tozeroy',fillcolor:'rgba(232,133,58,0.10)'},
+    {x:xs,y:precY,name:'Precision',mode:'lines',line:{color:C.navy,width:1.6,dash:'dot'}}
+  ];
+  const layout = Object.assign({}, BASE, {
+    margin:{l:36,r:10,t:6,b:30},
+    xaxis:{title:{text:'alerts reviewed',font:{size:10,color:C.muted}},gridcolor:C.line,zeroline:false},
+    yaxis:{ticksuffix:'%',range:[0,101],gridcolor:C.line,zeroline:false},
+    legend:{orientation:'h',y:1.13,x:0,font:{size:10}},
+    shapes:[
+      {type:'rect',xref:'x',yref:'y',x0:0,x1:budget,y0:0,y1:101,
+        fillcolor:'rgba(34,52,74,0.07)',line:{width:0},layer:'below'},
+      {type:'line',x0:budget,x1:budget,y0:0,y1:101,line:{color:C.navy,width:1.4,dash:'dash'}}
+    ]
+  });
+  Plotly.react('curve', data, layout, PCFG);
+}
+
+function drawTable(){
+  const show = R.slice(0, Math.min(budget, 250));
+  document.getElementById('tbl-sub').textContent =
+    'top '+show.length+' by '+(rankBy==='p'?'probability':'expected loss');
+  document.getElementById('tbody').innerHTML = show.map(a=>{
+    const w = Math.max(4, Math.round(32*a.p));
+    return '<tr>'+
+      '<td>'+a.t+'</td>'+
+      '<td class="card-mono">•••• '+a.card+'</td>'+
+      '<td>'+a.cat+'</td>'+
+      '<td class="num">'+money(a.amt)+'</td>'+
+      '<td><span class="pbar" style="width:'+w+'px"></span>'+(a.p*100).toFixed(0)+'%</td>'+
+      '<td class="num">'+money(a.el)+'</td>'+
+      '<td><span class="pill '+(a.f?'f':'l')+'">'+(a.f?'FRAUD':'legit')+'</span></td>'+
+    '</tr>';
+  }).join('');
+}
+
+function drawStatics(){
+  const cr = [...D.catRates].reverse();
+  Plotly.newPlot('cat', [{type:'bar',orientation:'h',
+      x:cr.map(d=>d.rate), y:cr.map(d=>d.cat),
+      marker:{color:C.navy}, hovertemplate:'%{y}: %{x:.2f}%<extra></extra>'}],
+    Object.assign({}, BASE, {margin:{l:96,r:10,t:6,b:20},
+      xaxis:{ticksuffix:'%',gridcolor:C.line,zeroline:false},
+      yaxis:{automargin:true,tickfont:{size:9}}}), PCFG);
+  Plotly.newPlot('wk', [{type:'bar',
+      x:D.weekly.map(d=>d.w), y:D.weekly.map(d=>d.n),
+      marker:{color:C.accent}, hovertemplate:'%{x}: %{y}<extra></extra>'}],
+    Object.assign({}, BASE, {xaxis:{type:'date',gridcolor:C.line,nticks:5},
+      yaxis:{gridcolor:C.line,zeroline:false}}), PCFG);
+  Plotly.newPlot('amt', [
+      {type:'box',name:'legit',q1:[D.amountBox.legit.q1],median:[D.amountBox.legit.med],
+        q3:[D.amountBox.legit.q3],lowerfence:[D.amountBox.legit.lf],upperfence:[D.amountBox.legit.uf],
+        line:{color:C.legit},fillcolor:'rgba(31,157,99,0.16)',boxpoints:false},
+      {type:'box',name:'fraud',q1:[D.amountBox.fraud.q1],median:[D.amountBox.fraud.med],
+        q3:[D.amountBox.fraud.q3],lowerfence:[D.amountBox.fraud.lf],upperfence:[D.amountBox.fraud.uf],
+        line:{color:C.fraud},fillcolor:'rgba(214,69,69,0.16)',boxpoints:false}
+    ],
+    Object.assign({}, BASE, {showlegend:false,
+      yaxis:{type:'log',gridcolor:C.line,zeroline:false,title:{text:'$',font:{size:9}}},
+      xaxis:{tickfont:{size:10}}}), PCFG);
+  Plotly.newPlot('pr', [
+    {x:D.pr.recall.map(r=>r*100), y:D.pr.precision.map(p=>p*100), mode:'lines',
+      name:'XGBoost', line:{color:C.navy,width:2.6}, hovertemplate:'R %{x:.0f}% · P %{y:.0f}%<extra></extra>'},
+    {x:[D.ruleRecall*100], y:[D.rulePrecision], mode:'markers', name:'Rule engine',
+      marker:{color:C.fraud,size:11,symbol:'x'}, hovertemplate:'Rules: R %{x:.0f}% · P %{y:.0f}%<extra></extra>'}
+  ], Object.assign({}, BASE, {margin:{l:34,r:10,t:6,b:24},
+      xaxis:{title:{text:'recall',font:{size:9,color:C.muted}},ticksuffix:'%',range:[0,101],gridcolor:C.line,zeroline:false},
+      yaxis:{ticksuffix:'%',range:[0,105],gridcolor:C.line,zeroline:false},
+      legend:{orientation:'h',y:1.17,x:0,font:{size:9}},
+      annotations:[{x:55,y:22,text:'AP '+D.pr.ap,showarrow:false,font:{size:10,color:C.muted}}]}), PCFG);
+}
+
+const slider = document.getElementById('budget');
+slider.max = TOTAL; slider.value = budget;
+slider.addEventListener('input', e=>{ budget = +e.target.value; refresh(); });
+document.querySelectorAll('#seg button').forEach(b=>{
+  b.addEventListener('click', ()=>{
+    document.querySelectorAll('#seg button').forEach(x=>x.classList.remove('on'));
+    b.classList.add('on'); rankBy = b.dataset.k; rebuild();
+  });
+});
+window.addEventListener('resize', ()=>{
+  ['curve','cat','wk','amt','pr'].forEach(id=>{const el=document.getElementById(id); if(el&&el.data) Plotly.Plots.resize(el);});
+});
+
+drawStatics();
+rebuild();
+</script>
+</body>
+</html>

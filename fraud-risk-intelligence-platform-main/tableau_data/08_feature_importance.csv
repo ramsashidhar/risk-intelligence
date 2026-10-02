@@ -1,0 +1,11 @@
+Feature,Importance
+amt_sum_24h,0.55349773
+amt,0.18372546
+txn_hour,0.08667684
+txn_count_24h,0.07306553
+txn_count_7d,0.037165422
+amt_zscore,0.022843504
+cardholder_age,0.020392189
+is_weekend,0.012529801
+home_merchant_km,0.010103548
+is_night,0.0
